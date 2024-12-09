@@ -31,6 +31,7 @@ public class Client implements Runnable {
     private JFrame frame;
     private CardLayout cardLayout;
     private JPanel cardPanel;
+    private String pfpPath = "";
 
 
     public void run() {
@@ -57,8 +58,6 @@ public class Client implements Runnable {
             cardPanel.add(createWelcomePage(), "WelcomePage");
             cardPanel.add(createLoginPage(), "LoginPage");
             cardPanel.add(createSignUpPage(), "SignUpPage");
-            cardPanel.add(createProfilePictureUploadPage(), "ProfilePictureUploadPage");
-            //cardPanel.add(createMainPage(), "MainPage");
 
             frame.add(cardPanel);
             frame.setVisible(true);
@@ -404,78 +403,123 @@ public class Client implements Runnable {
 
     // Method to create the Sign Up Page
     private JPanel createSignUpPage() {
-        JPanel panel = new JPanel();
-        JTextField firstNameField = new JTextField(10);
-        JTextField lastNameField = new JTextField(10);
-        JTextField userField = new JTextField(10);
-        JPasswordField passField = new JPasswordField(10);
+        JPanel panel = new JPanel(new BorderLayout());
+
+        // Create text fields with 10 columns
+        JTextField firstNameField = new JTextField(5);
+        JTextField lastNameField = new JTextField(5);
+        JTextField userField = new JTextField(5);
+        JPasswordField passField = new JPasswordField(5);
+
+        // Create a sub-panel for the text fields and labels (input panel)
+        JPanel inputPanel = new JPanel();
+        inputPanel.setLayout(new BoxLayout(inputPanel, BoxLayout.X_AXIS));
+        inputPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+        // Add labels and text fields to the input panel
+        inputPanel.add(new JLabel("First Name:"));
+        inputPanel.add(firstNameField);
+        inputPanel.add(new JLabel("Last Name:"));
+        inputPanel.add(lastNameField);
+        inputPanel.add(new JLabel("Username:"));
+        inputPanel.add(userField);
+        inputPanel.add(new JLabel("Password:"));
+        inputPanel.add(passField);
+
+        // Create sign-up button and add to the inputPanel
         JButton signUpButton = new JButton("Sign Up");
+        inputPanel.add(signUpButton);  // Add the button after the fields
 
-        // Add action listener for sign-up
-        signUpButton.addActionListener(e -> {
-            String firstName = firstNameField.getText();
-            String lastName = lastNameField.getText();
-            String username = userField.getText();
-            String password = new String(passField.getPassword());
-            sendSignUpRequest(firstName, lastName, username, password);
-            cardLayout.show(cardPanel, "ProfilePictureUploadPage");
-
-        });
-
-        panel.add(new JLabel("First Name:"));
-        panel.add(firstNameField);
-        panel.add(new JLabel("Last Name:"));
-        panel.add(lastNameField);
-        panel.add(new JLabel("Username:"));
-        panel.add(userField);
-        panel.add(new JLabel("Password:"));
-        panel.add(passField);
-        panel.add(signUpButton);
-        return panel;
-    }
-
-    // Method to create the Profile Picture Upload Page
-    private JPanel createProfilePictureUploadPage() {
-        JPanel panel = new JPanel();
+        // Create image label and upload button
         JLabel imageLabel = new JLabel("No Image Selected", SwingConstants.CENTER);
+        imageLabel.setPreferredSize(new Dimension(200, 200)); // Set fixed size for the label
         JButton uploadButton = new JButton("Upload Profile Picture");
 
-        // Add action listener for image upload
+        // Action listener for image upload
         uploadButton.addActionListener(e -> {
             String path = promptForProfilePicture();
             ImageIcon profileImageIcon = new ImageIcon(path);
+
             if (profileImageIcon != null) {
+                // Resize the image to fit the label
+                Image img = profileImageIcon.getImage().getScaledInstance(200, 200, Image.SCALE_SMOOTH);
+                profileImageIcon = new ImageIcon(img);
                 imageLabel.setIcon(profileImageIcon);
-                imageLabel.setText("");  // Remove "No Image Selected" text
-                sendImage(path);
+                imageLabel.setText(""); // Remove "No Image Selected" text
+                pfpPath = path; // Store the profile picture path
             } else {
                 JOptionPane.showMessageDialog(panel, "No image was selected.");
             }
         });
 
-        panel.setLayout(new BorderLayout());
-        panel.add(imageLabel, BorderLayout.CENTER);
-        panel.add(uploadButton, BorderLayout.SOUTH);
+        // Action listener for sign-up
+        signUpButton.addActionListener(e -> {
+            String firstName = firstNameField.getText();
+            String lastName = lastNameField.getText();
+            String username = userField.getText();
+            String password = new String(passField.getPassword());
+            sendSignUpRequest(firstName, lastName, username, password, pfpPath);
+            cardPanel.add(createMainPage(), "MainPage");
+            cardLayout.show(cardPanel, "MainPage");
+        });
+
+        // Create a panel for the image label and upload button
+        JPanel imagePanel = new JPanel();
+        imagePanel.setLayout(new BorderLayout());
+        imagePanel.add(imageLabel, BorderLayout.CENTER);
+        imagePanel.add(uploadButton, BorderLayout.SOUTH);
+
+        // Add image panel to the NORTH region
+        panel.add(imagePanel, BorderLayout.NORTH);
+
+        // Add the input panel (containing text fields and labels) to the center region
+        panel.add(inputPanel, BorderLayout.SOUTH);
+
         return panel;
     }
-    /**private JPanel createMainPage() {
+
+
+
+
+
+
+    private JPanel createMainPage() {
         String hostName = "localhost";
         int portNumber = 4242;
+        List<Post> posts = new ArrayList<>();
         try (Socket socket = new Socket(hostName, portNumber);
              PrintWriter pw = new PrintWriter(socket.getOutputStream(), true);
              BufferedReader br = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
-            pw.println("Option 6");
-            List<Post> posts = new ArrayList<>();
+            /**pw.println("Option 6");
+
             String line;
-            while (!((line = br.readLine()).equals("stop"))) {
+            String comment;
+
+
+            while (((line = br.readLine()) != null) && !((line = br.readLine()).equals("stop"))) {
                 if (line.equals("There are no posts in your feed.")) {
                     break;
                 }
                 if (line.equals("------------")) {
+                    String username = br.readLine().substring(9).trim();
+                    String caption = br.readLine().substring(8).trim();
+                    String image = br.readLine().substring(6).trim();
+                    int upvote = Integer.parseInt(br.readLine().substring(8).trim());
+                    int downvote = Integer.parseInt(br.readLine().substring(10).trim());
+                    ArrayList<String> comments = new ArrayList<String>();
+                    while (((comment = br.readLine()) != null) && !((comment = br.readLine()).equals("------------"))) {
+                        if (comment.equals("None")) {
+                            break;
+                        }
+                        comments.add(comment);
+                    }
+                    Post post = new Post(username, caption, image, upvote, downvote, comments);
+                    posts.add(post);
 
                 }
 
             }
+             */
 
 
         } catch (IOException e) {
@@ -485,20 +529,20 @@ public class Client implements Runnable {
         }
         // Use BorderLayout for the main panel
         JPanel panel = new JPanel(new BorderLayout());
-
         // Create the page label
         JLabel pageLabel = new JLabel("Main Page", SwingConstants.CENTER);
         pageLabel.setFont(new Font("Roboto", Font.BOLD, 50));
+
+        JButton exitButton = new JButton("Exit");
+        exitButton.addActionListener(e -> {
+            sendExitMessage();
+        });
 
         // Create the feed panel to hold all posts
         JPanel feedPanel = new JPanel();
         feedPanel.setLayout(new BoxLayout(feedPanel, BoxLayout.Y_AXIS));  // Stack posts vertically
 
-        // Simulating posts fetched from the server (image path, caption, upvotes, downvotes)
-        List<Post> posts = new ArrayList<>();
-        posts.add(new Post("path/to/image1.jpg", "Caption for image 1", 10, 2));
-        posts.add(new Post("path/to/image2.jpg", "Caption for image 2", 5, 1));
-        posts.add(new Post("path/to/image3.jpg", "Caption for image 3", 20, 5));
+
 
         // Sort the posts based on total votes (upvotes - downvotes)
         posts.sort((p1, p2) -> Integer.compare(p2.getTotalVotes(), p1.getTotalVotes()));  // Sort in descending order
@@ -510,15 +554,15 @@ public class Client implements Runnable {
             postPanel.setLayout(new BorderLayout());
 
             // Load the image and create an ImageIcon
-            ImageIcon imageIcon = new ImageIcon(post.imagePath);  // Path to image (ensure image exists)
+            ImageIcon imageIcon = new ImageIcon(post.getImage());  // Path to image (ensure image exists)
             JLabel imageLabel = new JLabel(imageIcon);
 
             // Create a label for the caption
-            JLabel captionLabel = new JLabel(post.caption);
+            JLabel captionLabel = new JLabel(post.getCaption());
             captionLabel.setFont(new Font("Roboto", Font.PLAIN, 16));
 
             // Create a label for the votes
-            JLabel voteLabel = new JLabel("Upvotes: " + post.upvotes + " | Downvotes: " + post.downvotes);
+            JLabel voteLabel = new JLabel("Upvotes: " + post.getUpvote() + " | Downvotes: " + post.getDownvote());
             voteLabel.setFont(new Font("Roboto", Font.PLAIN, 14));
 
             // Create upvote and downvote buttons
@@ -527,12 +571,12 @@ public class Client implements Runnable {
 
             // Add action listeners to the buttons to handle votes
             upvoteButton.addActionListener(e -> {
-                post.upvotes++;
+                post.incrementUpvote();
                 updateFeed(feedPanel, posts);
             });
 
             downvoteButton.addActionListener(e -> {
-                post.downvotes++;
+                post.incrementDownvote();
                 updateFeed(feedPanel, posts);
             });
 
@@ -556,17 +600,76 @@ public class Client implements Runnable {
         JScrollPane scrollPane = new JScrollPane(feedPanel);
         scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
 
+        JPanel sidePanel = new JPanel();
+        sidePanel.setLayout(new BoxLayout(sidePanel, BoxLayout.Y_AXIS));
+        sidePanel.setBackground(Color.LIGHT_GRAY);
+        sidePanel.setBorder(BorderFactory.createTitledBorder("Actions"));
+        JButton addFriend = new JButton("Add Friend");
+        sidePanel.add(addFriend);
+        addFriend.addActionListener(e -> {
+            // action
+        });
+        JButton blockUser = new JButton("Block a User");
+        sidePanel.add(blockUser);
+        blockUser.addActionListener(e -> {
+            // action
+        });
+        JButton unBlockUser = new JButton("Unblock a User");
+        sidePanel.add(unBlockUser);
+        unBlockUser.addActionListener(e -> {
+            // action
+        });
+        JButton viewAUserProfile = new JButton("View a User Profile");
+        sidePanel.add(viewAUserProfile);
+        viewAUserProfile.addActionListener(e -> {
+            // action
+        });
+        JButton createPost = new JButton("Create a Post");
+        sidePanel.add(createPost);
+        createPost.addActionListener(e -> {
+            // action
+        });
+        JButton deletePost = new JButton("Delete a Post");
+        sidePanel.add(deletePost);
+        deletePost.addActionListener(e -> {
+            // action
+        });
+        JButton editPost = new JButton("Edit a Post");
+        sidePanel.add(editPost);
+        editPost.addActionListener(e -> {
+            // action
+        });
+        JButton createAComment = new JButton("Create a Comment");
+        sidePanel.add(createAComment);
+        createAComment.addActionListener(e -> {
+            // action
+        });
+        JButton deleteAComment = new JButton("Delete a Comment");
+        sidePanel.add(deleteAComment);
+        deleteAComment.addActionListener(e -> {
+            // action
+        });
+        JButton editComment = new JButton("Edit a Comment");
+        sidePanel.add(editComment);
+       editComment.addActionListener(e -> {
+            // action
+        });
+
+
+
         // Add components to the main panel
         panel.add(pageLabel, BorderLayout.NORTH);  // Page title at the top
-        panel.add(scrollPane, BorderLayout.CENTER);  // Feed in the center
-
+        panel.add(scrollPane, BorderLayout.CENTER);// Feed in the center
+        panel.add(exitButton, BorderLayout.SOUTH);
+        panel.add(sidePanel, BorderLayout.WEST);
         return panel;
+
     }
 
-     */
+
 
     // Method to update the feed after voting
-    /**private void updateFeed(JPanel feedPanel, List<Post> posts) {
+    private void updateFeed(JPanel feedPanel, List<Post> posts) {
         // Clear the current feed
         feedPanel.removeAll();
 
@@ -578,25 +681,25 @@ public class Client implements Runnable {
             JPanel postPanel = new JPanel();
             postPanel.setLayout(new BorderLayout());
 
-            ImageIcon imageIcon = new ImageIcon(post.imagePath);  // Path to image (ensure image exists)
+            ImageIcon imageIcon = new ImageIcon(post.getImage());  // Path to image (ensure image exists)
             JLabel imageLabel = new JLabel(imageIcon);
 
-            JLabel captionLabel = new JLabel(post.caption);
+            JLabel captionLabel = new JLabel(post.getCaption());
             captionLabel.setFont(new Font("Roboto", Font.PLAIN, 16));
 
-            JLabel voteLabel = new JLabel("Upvotes: " + post.upvotes + " | Downvotes: " + post.downvotes);
+            JLabel voteLabel = new JLabel("Upvotes: " + post.getUpvote() + " | Downvotes: " + post.getDownvote());
             voteLabel.setFont(new Font("Roboto", Font.PLAIN, 14));
 
             JButton upvoteButton = new JButton("Upvote");
             JButton downvoteButton = new JButton("Downvote");
 
             upvoteButton.addActionListener(e -> {
-                post.upvotes++;
+                post.incrementUpvote();
                 updateFeed(feedPanel, posts);
             });
 
             downvoteButton.addActionListener(e -> {
-                post.downvotes++;
+                post.incrementDownvote();
                 updateFeed(feedPanel, posts);
             });
 
@@ -616,7 +719,7 @@ public class Client implements Runnable {
         // Refresh the feed
         feedPanel.revalidate();
         feedPanel.repaint();
-    } */
+    }
 
 
 
@@ -670,6 +773,7 @@ public class Client implements Runnable {
             SwingUtilities.invokeLater(() -> {
                 if ("true".equals(response)) {
                     JOptionPane.showMessageDialog(null, "Login successful", "Success", JOptionPane.INFORMATION_MESSAGE);
+                    cardPanel.add(createMainPage(), "MainPage");
                     cardLayout.show(cardPanel, "MainPage");
                 } else {
                     JOptionPane.showMessageDialog(null, "Login failed", "Error", JOptionPane.ERROR_MESSAGE);
@@ -682,7 +786,7 @@ public class Client implements Runnable {
             });
         }
     }
-    private void sendSignUpRequest(String first, String last, String username, String password) {
+    private void sendSignUpRequest(String first, String last, String username, String password, String path) {
         String hostName = "localhost";
         int portNumber = 4242;
         try (Socket socket = new Socket(hostName, portNumber);
@@ -709,6 +813,9 @@ public class Client implements Runnable {
                     JOptionPane.showMessageDialog(null, "Account Successfully Created", "Twitter", JOptionPane.INFORMATION_MESSAGE);
                 }
             });
+            pw.println(path);
+
+
 
 
         } catch (IOException e) {
@@ -717,7 +824,8 @@ public class Client implements Runnable {
             });
         }
     }
-    private void sendImage(String path) {
+
+    private void sendExitMessage() {
         String hostName = "localhost";
         int portNumber = 4242;
         try (Socket socket = new Socket(hostName, portNumber);
@@ -725,8 +833,8 @@ public class Client implements Runnable {
              BufferedReader br = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
 
             // Send login request
-            pw.println(path);
-            cardLayout.show(cardPanel, "MainPage");
+            pw.println("Option 16");
+            System.exit(0);
         } catch (IOException e) {
             SwingUtilities.invokeLater(() -> {
                 JOptionPane.showMessageDialog(null, "Connection error", "Error", JOptionPane.ERROR_MESSAGE);
