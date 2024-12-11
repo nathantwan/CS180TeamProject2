@@ -270,7 +270,7 @@ public class Client implements Runnable {
             // Create a label for the votes
             JLabel voteLabel = new JLabel("Upvotes: " + post.getUpvote() + " | Downvotes: " + post.getDownvote());
             voteLabel.setFont(new Font("Roboto", Font.PLAIN, 14));
-            
+
             // Create upvote and downvote buttons
             JButton upvoteButton = new JButton("Upvote");
             JButton downvoteButton = new JButton("Downvote");
@@ -297,7 +297,7 @@ public class Client implements Runnable {
             postPanel.add(captionLabel, BorderLayout.CENTER);
             postPanel.add(voteLabel, BorderLayout.SOUTH);
             postPanel.add(votePanel, BorderLayout.SOUTH);
-            
+
             for (Comment comment: post.getComments()) {
                 JLabel commentLabel = new JLabel(comment.getCommenter().getUsername() + ": " + comment.getText());
                 postPanel.add(commentLabel, BorderLayout.SOUTH);
@@ -493,6 +493,11 @@ public class Client implements Runnable {
             postPanel.add(captionLabel, BorderLayout.CENTER);
             postPanel.add(voteLabel, BorderLayout.SOUTH);
             postPanel.add(votePanel, BorderLayout.SOUTH);
+            for (Comment comment: post.getComments()) {
+                JLabel commentLabel = new JLabel(comment.getCommenter().getUsername() + ": " + comment.getText());
+                postPanel.add(commentLabel, BorderLayout.SOUTH);
+
+            }
 
             feedPanel.add(postPanel);
         }
