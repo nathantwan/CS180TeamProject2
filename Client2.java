@@ -214,7 +214,19 @@ public class Client implements Runnable {
 
     private JPanel createMainPage() {
         List<Post> posts = new ArrayList<>();
-        List<User> users = new ArrayList<>();
+        List<String> usernames = new ArrayList<>();
+
+        writer.println("Get Users");
+        writer.flush();
+
+        try {
+            String username = reader.readLine();
+            while (username != null && !username.equals("stop")) {
+                if (username.equals("No other users")) {break;}
+                usernames.add(username);
+                username = reader.readLine();
+            }
+        } catch (IOException e) {}
 
 
         // users.add(new User("y", "g", "yg1", "1234567", null));
@@ -301,119 +313,73 @@ public class Client implements Runnable {
 
         JButton addFriend = new JButton("Add Friend"); sidePanel.add(addFriend);
         addFriend.addActionListener(e -> {
-            String[] usernames = new String[users.size()];
-            for (int i = 0; i < usernames.length; i++) {usernames[i] = String.format("%s (%s)", users.get(i).getName(), users.get(i).getUsername());}
             String friendUsername = (String) JOptionPane.showInputDialog(null, "Select which user to add",
-                    "Add Friend", JOptionPane.QUESTION_MESSAGE, null, usernames, null);
+                    "Add Friend", JOptionPane.QUESTION_MESSAGE, null, usernames.toArray(), null);
 
-            if (friendUsername != null) {
-                int index = -1;
-                for (int i = 0; i < usernames.length; i++) {
-                    if (friendUsername.equals(usernames[i])) {index = i; break;}
-                }
-                String addUsername = users.get(index).getUsername();
+            writer.write("Option 1");
+            writer.println();
+            writer.flush();
+            writer.write(friendUsername);
+            writer.println();
+            writer.flush();
+            try {JOptionPane.showMessageDialog(null, reader.readLine(), "Add Friend", JOptionPane.INFORMATION_MESSAGE);}
+            catch (IOException er) {};
 
-                writer.write("Option 1");
-                writer.println();
-                writer.flush();
-                writer.write(addUsername);
-                System.out.println(addUsername);
-                writer.println();
-                writer.flush();
-                try {JOptionPane.showMessageDialog(null, reader.readLine(), "Add Friend", JOptionPane.INFORMATION_MESSAGE);}
-                catch (IOException er) {};
-
-            }
 
         });
         JButton removeFriend = new JButton("Remove Friend"); sidePanel.add(removeFriend);
         removeFriend.addActionListener(e -> {
-            String[] usernames = new String[users.size()];
-            for (int i = 0; i < usernames.length; i++) {usernames[i] = String.format("%s (%s)", users.get(i).getName(), users.get(i).getUsername());}
             String friendUsername = (String) JOptionPane.showInputDialog(null, "Select which user to remove as a friend",
-                    "Remove Friend", JOptionPane.QUESTION_MESSAGE, null, usernames, null);
+                    "Remove Friend", JOptionPane.QUESTION_MESSAGE, null, usernames.toArray(), null);
 
-            if (friendUsername != null) {
-                int index = -1;
-                for (int i = 0; i < usernames.length; i++) {
-                    if (friendUsername.equals(usernames[i])) {index = i; break;}
-                }
-                String addUsername = users.get(index).getUsername();
 
                 writer.write("Option 2");
                 writer.println();
                 writer.flush();
-                writer.write(addUsername);
-                System.out.println(addUsername);
+                writer.write(friendUsername);
                 writer.println();
                 writer.flush();
                 try {JOptionPane.showMessageDialog(null, reader.readLine(), "Remove Friend", JOptionPane.INFORMATION_MESSAGE);}
                 catch (IOException er) {};
-            }
+            
 
         });
         JButton blockUser = new JButton("Block a User"); sidePanel.add(blockUser);
         blockUser.addActionListener(e -> {
-            String[] usernames = new String[users.size()];
-            for (int i = 0; i < usernames.length; i++) {usernames[i] = String.format("%s (%s)", users.get(i).getName(), users.get(i).getUsername());}
             String blockUsername = (String) JOptionPane.showInputDialog(null, "Select which user to block",
-                    "Block User", JOptionPane.QUESTION_MESSAGE, null, usernames, null);
-
-            if (blockUsername != null) {
-                int index = -1;
-                for (int i = 0; i < usernames.length; i++) {
-                    if (blockUsername.equals(usernames[i])) {index = i; break;}
-                }
-                String block = users.get(index).getUsername();
+                    "Block User", JOptionPane.QUESTION_MESSAGE, null, usernames.toArray(), null);
 
                 writer.write("Option 3");
                 writer.println();
                 writer.flush();
-                writer.write(block);
+                writer.write(blockUsername);
                 writer.println();
                 writer.flush();
                 try {JOptionPane.showMessageDialog(null, reader.readLine(), "Block User", JOptionPane.INFORMATION_MESSAGE);}
                 catch (IOException er) {};
-            }
+            
         });
         JButton unBlockUser = new JButton("Unblock a User");  sidePanel.add(unBlockUser);
         unBlockUser.addActionListener(e -> {
-            String[] usernames = new String[users.size()];
-            for (int i = 0; i < usernames.length; i++) {usernames[i] = String.format("%s (%s)", users.get(i).getName(), users.get(i).getUsername());}
             String blockUsername = (String) JOptionPane.showInputDialog(null, "Select which user to unblock",
-                    "Unblock User", JOptionPane.QUESTION_MESSAGE, null, usernames, null);
-
-            if (blockUsername != null) {
-                int index = -1;
-                for (int i = 0; i < usernames.length; i++) {
-                    if (blockUsername.equals(usernames[i])) {index = i; break;}
-                }
-                String block = users.get(index).getUsername();
+                    "Unblock User", JOptionPane.QUESTION_MESSAGE, null, usernames.toArray(), null);
 
                 writer.write("Option 4");
                 writer.println();
                 writer.flush();
-                writer.write(block);
+                writer.write(blockUsername);
                 writer.println();
                 writer.flush();
                 try {JOptionPane.showMessageDialog(null, reader.readLine(), "Unblock User", JOptionPane.INFORMATION_MESSAGE);}
                 catch (IOException er) {};
-            }
+            
         });
         
         JButton viewAUserProfile = new JButton("View a User Profile"); sidePanel.add(viewAUserProfile);
         viewAUserProfile.addActionListener(e -> {
-            String[] usernames = new String[users.size()];
-            for (int i = 0; i < usernames.length; i++) {usernames[i] = String.format("%s (%s)", users.get(i).getName(), users.get(i).getUsername());}
             String viewProfile = (String) JOptionPane.showInputDialog(null, "Select which user to view",
-                    "User Profle", JOptionPane.QUESTION_MESSAGE, null, usernames, null);
+                    "User Profle", JOptionPane.QUESTION_MESSAGE, null, usernames.toArray(), null);
 
-            if (viewProfile != null) {
-                int index = -1;
-                for (int i = 0; i < usernames.length; i++) {
-                    if (viewProfile.equals(usernames[i])) {index = i; break;}
-                }
-                viewProfile = users.get(index).getUsername();
                 writer.write("Option 5");
                 writer.println();
                 writer.flush();
@@ -431,7 +397,7 @@ public class Client implements Runnable {
 
                 JOptionPane.showMessageDialog(null, line, "View Profile", JOptionPane.INFORMATION_MESSAGE);}
                 catch (IOException er) {};
-            }
+            
         
         });
 
@@ -460,7 +426,7 @@ public class Client implements Runnable {
         });
         JButton editComment = new JButton("Edit a Comment");
         sidePanel.add(editComment);
-       editComment.addActionListener(e -> {
+        editComment.addActionListener(e -> {
             // action
         });
 
