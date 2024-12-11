@@ -409,9 +409,13 @@ public class Client implements Runnable {
         });
         JButton viewAUserProfile = new JButton("View a User Profile"); sidePanel.add(viewAUserProfile);
         viewAUserProfile.addActionListener(e -> {
+            writer.println("Get Username"); writer.flush();
+            String username = null;
+            try {username = (String) reader.readLine();} catch (Exception er) {}
+            usernames.add(username);
             String viewProfile = (String) JOptionPane.showInputDialog(null, "Select which user to view",
-                    "User Profle", JOptionPane.QUESTION_MESSAGE, null, usernames.toArray(), null);
-
+                    "User Profile", JOptionPane.QUESTION_MESSAGE, null, usernames.toArray(), null);
+            usernames.remove(username);
                 writer.write("Option 5");
                 writer.println();
                 writer.flush();
@@ -422,16 +426,31 @@ public class Client implements Runnable {
                 try {
                 String userProfile = "";
 
+                ImageIcon icon = null; 
                 String line = reader.readLine();
+                int count = 1;
                 while (line.equals("stop") == false) {
-                    userProfile += line + "\n";
+                    
+                    if (count == 4) {
+                        System.out.println(line);
+                        line = line.substring(17);
+                        if (line.equals("null") == false) {                        icon = new ImageIcon(line);}
+
+                    } else {userProfile += line + "\n";}
                     line = reader.readLine();
+                    count++;
+                    
                 }
 
                 System.out.println(userProfile);
-
-                JOptionPane.showMessageDialog(null, userProfile, "View Profile", JOptionPane.INFORMATION_MESSAGE);}
-                catch (IOException er) {};
+                if (icon != null){
+                JOptionPane.showMessageDialog(null,
+                        new JLabel(userProfile, icon, JLabel.LEFT),
+                        "View Profile", JOptionPane.INFORMATION_MESSAGE);}
+                        
+                else {
+                JOptionPane.showMessageDialog(null, userProfile, "View Profile", JOptionPane.INFORMATION_MESSAGE);}}
+                catch (Exception er) {};
             
         
         });
@@ -726,6 +745,7 @@ public class Client implements Runnable {
             // Send login request
             writer.println("Option 16"); writer.flush();
             runLoop = false;
+            frame.setVisible(false);
             System.exit(0);
         } catch (Exception e) {
             SwingUtilities.invokeLater(() -> {
