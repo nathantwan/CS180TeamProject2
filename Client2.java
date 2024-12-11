@@ -31,6 +31,7 @@ public class Client implements Runnable {
     private Socket socket = null;
     private BufferedReader reader = null;
     private PrintWriter writer = null;
+    private List<Integer> postNums = new ArrayList<>();
     boolean runLoop = true;
 
 
@@ -169,7 +170,7 @@ public class Client implements Runnable {
 
         // Action listener for image upload
         uploadButton.addActionListener(e -> {
-            String path = promptForProfilePicture();
+            String path = promptForPicture("Select Profile Picture");
             ImageIcon profileImageIcon = new ImageIcon(path);
 
             if (profileImageIcon != null) {
@@ -213,12 +214,22 @@ public class Client implements Runnable {
 
 
     private JPanel createMainPage() {
-        List<Post> posts = new ArrayList<>();
         List<String> usernames = new ArrayList<>();
+
+        writer.println("Option 6"); writer.flush();
+        try {
+            String line = reader.readLine();
+            System.out.println(line);
+            if (line != null && !line.isEmpty()) {
+                String[] nums = line.split(",");
+                for (String n : nums) {postNums.add(Integer.parseInt(n));}
+            }
+        } catch (Exception e) {}
+
+        System.out.println(postNums.size());
 
         writer.println("Get Users");
         writer.flush();
-
         try {
             String username = reader.readLine();
             while (username != null && !username.equals("stop")) {
@@ -227,11 +238,6 @@ public class Client implements Runnable {
                 username = reader.readLine();
             }
         } catch (IOException e) {}
-
-
-        // users.add(new User("y", "g", "yg1", "1234567", null));
-        // users.add(new User("y", "g", "yg2", "1234567", null));
-        // users.add(new User("y", "g", "yg3", "1234567", null));
         
         // Use BorderLayout for the main panel
         JPanel panel = new JPanel(new BorderLayout());
@@ -249,26 +255,30 @@ public class Client implements Runnable {
         feedPanel.setLayout(new BoxLayout(feedPanel, BoxLayout.Y_AXIS));  // Stack posts vertically
 
 
-
-        // Sort the posts based on total votes (upvotes - downvotes)
-        posts.sort((p1, p2) -> Integer.compare(p2.getTotalVotes(), p1.getTotalVotes()));  // Sort in descending order
-
         // Loop through the sorted posts and create a panel for each one
-        for (Post post : posts) {
+        for (int postNum : postNums) {
             // Create a panel for this post
             JPanel postPanel = new JPanel();
             postPanel.setLayout(new BorderLayout());
 
+            writer.println("Post Info"); writer.flush(); writer.println(String.valueOf(postNum)); writer.flush();
+            String[] info = null;
+            try {
+                String s = reader.readLine(); System.out.println(s);
+                info = s.split(",");} catch (Exception e) {}
+            
+
             // Load the image and create an ImageIcon
-            ImageIcon imageIcon = new ImageIcon(post.getImage());  // Path to image (ensure image exists)
-            JLabel imageLabel = new JLabel(imageIcon);
+            JLabel imageLabel = null;
+            if (info[0] != null) {ImageIcon imageIcon = new ImageIcon(info[0]);  // Path to image (ensure image exists)
+            imageLabel = new JLabel(imageIcon);}
 
             // Create a label for the caption
-            JLabel captionLabel = new JLabel(post.getCaption());
+            JLabel captionLabel = new JLabel(info[1]);
             captionLabel.setFont(new Font("Roboto", Font.PLAIN, 16));
 
             // Create a label for the votes
-            JLabel voteLabel = new JLabel("Upvotes: " + post.getUpvote() + " | Downvotes: " + post.getDownvote());
+            JLabel voteLabel = new JLabel("Upvotes: " + info[2] + " | Downvotes: " + info[3]);
             voteLabel.setFont(new Font("Roboto", Font.PLAIN, 14));
 
             // Create upvote and downvote buttons
@@ -277,13 +287,13 @@ public class Client implements Runnable {
 
             // Add action listeners to the buttons to handle votes
             upvoteButton.addActionListener(e -> {
-                post.incrementUpvote();
-                updateFeed(feedPanel, posts);
+                writer.println("Option 13"); writer.flush(); writer.println(String.valueOf(postNums.indexOf(postNum))); writer.flush();
+                updateFeed(feedPanel);
             });
 
             downvoteButton.addActionListener(e -> {
-                post.incrementDownvote();
-                updateFeed(feedPanel, posts);
+                writer.println("Option 14"); writer.flush(); writer.println(String.valueOf(postNums.indexOf(postNum))); writer.flush();
+                updateFeed(feedPanel);
             });
 
             // Create a panel for the buttons (upvote and downvote)
@@ -297,6 +307,17 @@ public class Client implements Runnable {
             postPanel.add(captionLabel, BorderLayout.CENTER);
             postPanel.add(voteLabel, BorderLayout.SOUTH);
             postPanel.add(votePanel, BorderLayout.SOUTH);
+
+            JPanel commentLabel = new JPanel();
+
+            int i = 4;
+            while (i < info.length) {
+                JLabel comment = new JLabel(info[i]);
+                commentLabel.add(comment);
+                i++;
+            }
+
+            postPanel.add(commentLabel, BorderLayout.EAST);
 
             // Add the post panel to the feed
             feedPanel.add(postPanel);
@@ -325,6 +346,8 @@ public class Client implements Runnable {
             try {JOptionPane.showMessageDialog(null, reader.readLine(), "Add Friend", JOptionPane.INFORMATION_MESSAGE);}
             catch (IOException er) {};
 
+            updateFeed(feedPanel);
+
 
         });
         JButton removeFriend = new JButton("Remove Friend"); sidePanel.add(removeFriend);
@@ -341,6 +364,8 @@ public class Client implements Runnable {
                 writer.flush();
                 try {JOptionPane.showMessageDialog(null, reader.readLine(), "Remove Friend", JOptionPane.INFORMATION_MESSAGE);}
                 catch (IOException er) {};
+
+                updateFeed(feedPanel);
             
 
         });
@@ -357,6 +382,8 @@ public class Client implements Runnable {
                 writer.flush();
                 try {JOptionPane.showMessageDialog(null, reader.readLine(), "Block User", JOptionPane.INFORMATION_MESSAGE);}
                 catch (IOException er) {};
+
+                updateFeed(feedPanel);
             
         });
         JButton unBlockUser = new JButton("Unblock a User");  sidePanel.add(unBlockUser);
@@ -372,9 +399,10 @@ public class Client implements Runnable {
                 writer.flush();
                 try {JOptionPane.showMessageDialog(null, reader.readLine(), "Unblock User", JOptionPane.INFORMATION_MESSAGE);}
                 catch (IOException er) {};
+
+                updateFeed(feedPanel);
             
         });
-        
         JButton viewAUserProfile = new JButton("View a User Profile"); sidePanel.add(viewAUserProfile);
         viewAUserProfile.addActionListener(e -> {
             String viewProfile = (String) JOptionPane.showInputDialog(null, "Select which user to view",
@@ -388,46 +416,107 @@ public class Client implements Runnable {
                 writer.flush();
                 
                 try {
-                String line = reader.readLine() + "\n";
-                while (line.equals("stop") == false) {
-                    System.out.println(line);
-                    line += reader.readLine() + "\n";
-                }
-                System.out.println(line);
+                String userProfile = "";
 
-                JOptionPane.showMessageDialog(null, line, "View Profile", JOptionPane.INFORMATION_MESSAGE);}
+                String line = reader.readLine();
+                while (line.equals("stop") == false) {
+                    userProfile += line + "\n";
+                    line = reader.readLine();
+                }
+
+                System.out.println(userProfile);
+
+                JOptionPane.showMessageDialog(null, userProfile, "View Profile", JOptionPane.INFORMATION_MESSAGE);}
                 catch (IOException er) {};
             
         
         });
-
         JButton createPost = new JButton("Create a Post"); sidePanel.add(createPost);
         createPost.addActionListener(e -> {
-            // action
+            writer.println("Option 7"); writer.flush();
+            String caption = (String) JOptionPane.showInputDialog(null, "Enter Post Caption", "Create Post", JOptionPane.QUESTION_MESSAGE);
+            String image = promptForPicture("Post Picture");
+            writer.println(caption); writer.flush();
+            writer.println(image); writer.flush();
+
+            updateFeed(feedPanel);
+            
+            
         });
         JButton deletePost = new JButton("Delete a Post"); sidePanel.add(deletePost);
         deletePost.addActionListener(e -> {
-            // action
+            writer.println("Option 8"); writer.flush();
+            String number = (String)JOptionPane.showInputDialog(null, "What post number would you like to delete (starting at 0)", "Delete Post", JOptionPane.QUESTION_MESSAGE);
+            writer.println(number); writer.flush();
+
+            try{
+                JOptionPane.showMessageDialog(null, reader.readLine(), "Delete Post", JOptionPane.INFORMATION_MESSAGE);
+            } catch (Exception er) {}
+
+            updateFeed(feedPanel);
+
         });
         JButton editPost = new JButton("Edit a Post");
         sidePanel.add(editPost);
         editPost.addActionListener(e -> {
-            // action
+            writer.println("Option 9"); writer.flush();
+            String number = (String)JOptionPane.showInputDialog(null, "What post number would you like to edit (starting at 0)", "Edit Post", JOptionPane.QUESTION_MESSAGE);
+            writer.println(number); writer.flush();
+            String caption = (String) JOptionPane.showInputDialog(null, "Enter New Post Caption", "Edit Post", JOptionPane.QUESTION_MESSAGE);
+            writer.println(caption); writer.flush();
+
+            try{
+                JOptionPane.showMessageDialog(null, reader.readLine(), "Edit Post", JOptionPane.INFORMATION_MESSAGE);
+            } catch (Exception er) {}
+
+            updateFeed(feedPanel);
         });
         JButton createAComment = new JButton("Create a Comment");
         sidePanel.add(createAComment);
         createAComment.addActionListener(e -> {
-            // action
+            writer.println("Option 10"); writer.flush();
+            String number = (String)JOptionPane.showInputDialog(null, "What post number would you like to comment on (starting at 0)", "Enter Comment", JOptionPane.QUESTION_MESSAGE);
+            writer.println(number); writer.flush();
+            String comment =(String) JOptionPane.showInputDialog(null, "Enter Comment", "New Comment", JOptionPane.QUESTION_MESSAGE);
+            writer.println(comment); writer.flush();
+
+            try{
+                JOptionPane.showMessageDialog(null, reader.readLine(), "Enter Comment", JOptionPane.INFORMATION_MESSAGE);
+            } catch (Exception er) {}
+
+            updateFeed(feedPanel);
         });
         JButton deleteAComment = new JButton("Delete a Comment");
         sidePanel.add(deleteAComment);
         deleteAComment.addActionListener(e -> {
-            // action
+            writer.println("Option 11"); writer.flush();
+            String number = (String)JOptionPane.showInputDialog(null, "What post number would you like to delete the comment on (starting at 0)", "Delete Comment", JOptionPane.QUESTION_MESSAGE);
+            writer.println(number); writer.flush();
+            String comment = (String) JOptionPane.showInputDialog(null, "What comment number would you like to delete (starting at 0)", "Delete Comment", JOptionPane.QUESTION_MESSAGE);
+            writer.println(comment); writer.flush();
+
+            try{
+                JOptionPane.showMessageDialog(null, reader.readLine(), "Delete Comment", JOptionPane.INFORMATION_MESSAGE);
+            } catch (Exception er) {}
+
+            updateFeed(feedPanel);
         });
         JButton editComment = new JButton("Edit a Comment");
         sidePanel.add(editComment);
         editComment.addActionListener(e -> {
-            // action
+            writer.println("Option 12"); writer.flush();
+            String number = (String)JOptionPane.showInputDialog(null, "What post number would you like to edit the comment on (starting at 0)", "Edit Comment", JOptionPane.QUESTION_MESSAGE);
+            writer.println(number); writer.flush();
+            String commentNum = (String) JOptionPane.showInputDialog(null, "What comment number would you like to edit (starting at 0)", "Edit Comment", JOptionPane.QUESTION_MESSAGE);
+            writer.println(commentNum); writer.flush();
+            String comment =(String) JOptionPane.showInputDialog(null, "Enter New Comment", "New Comment", JOptionPane.QUESTION_MESSAGE);
+            writer.println(comment); writer.flush();
+
+            try{
+                JOptionPane.showMessageDialog(null, reader.readLine(), "Edit Comment", JOptionPane.INFORMATION_MESSAGE);
+            } catch (Exception er) {}
+
+            updateFeed(feedPanel);
         });
 
 
@@ -444,50 +533,86 @@ public class Client implements Runnable {
 
 
     // Method to update the feed after voting
-    private void updateFeed(JPanel feedPanel, List<Post> posts) {
+    private void updateFeed(JPanel feedPanel) {
+        postNums = new ArrayList<>();
         // Clear the current feed
         feedPanel.removeAll();
 
-        // Re-sort the posts based on updated votes
-        posts.sort((p1, p2) -> Integer.compare(p2.getTotalVotes(), p1.getTotalVotes()));
+        writer.println("Option 6"); writer.flush();
+        try {
+            String line = reader.readLine();
+            System.out.println("update line:" + line);
+            if (line != null && !line.isEmpty()) {
+                String[] nums = line.split(",");
+                for (String n : nums) {postNums.add(Integer.parseInt(n));}
+            }
+        } catch (Exception e) {}
 
         // Rebuild the feed with updated posts
-        for (Post post : posts) {
+        for (int postNum : postNums) {
+            // Create a panel for this post
             JPanel postPanel = new JPanel();
             postPanel.setLayout(new BorderLayout());
 
-            ImageIcon imageIcon = new ImageIcon(post.getImage());  // Path to image (ensure image exists)
-            JLabel imageLabel = new JLabel(imageIcon);
+            writer.println("Post Info"); writer.flush(); writer.println(String.valueOf(postNum)); writer.flush();
+            String[] info = null;
+            try {
+                String s = reader.readLine(); System.out.println(s);
+                info = s.split(",");} catch (Exception e) {}
+            
 
-            JLabel captionLabel = new JLabel(post.getCaption());
+            // Load the image and create an ImageIcon
+            JLabel imageLabel = null;
+            if (info[0] != null) {ImageIcon imageIcon = new ImageIcon(info[0]);  // Path to image (ensure image exists)
+            imageLabel = new JLabel(imageIcon);}
+
+            // Create a label for the caption
+            JLabel captionLabel = new JLabel(info[1]);
             captionLabel.setFont(new Font("Roboto", Font.PLAIN, 16));
 
-            JLabel voteLabel = new JLabel("Upvotes: " + post.getUpvote() + " | Downvotes: " + post.getDownvote());
+            // Create a label for the votes
+            JLabel voteLabel = new JLabel("Upvotes: " + info[2] + " | Downvotes: " + info[3]);
             voteLabel.setFont(new Font("Roboto", Font.PLAIN, 14));
 
+            // Create upvote and downvote buttons
             JButton upvoteButton = new JButton("Upvote");
             JButton downvoteButton = new JButton("Downvote");
 
+            // Add action listeners to the buttons to handle votes
             upvoteButton.addActionListener(e -> {
-                post.incrementUpvote();
-                updateFeed(feedPanel, posts);
+                writer.println("Option 13"); writer.flush(); writer.println(String.valueOf(postNums.indexOf(postNum))); writer.flush();
+                updateFeed(feedPanel);
             });
 
             downvoteButton.addActionListener(e -> {
-                post.incrementDownvote();
-                updateFeed(feedPanel, posts);
+                writer.println("Option 14"); writer.flush(); writer.println(String.valueOf(postNums.indexOf(postNum))); writer.flush();
+                updateFeed(feedPanel);
             });
 
+            // Create a panel for the buttons (upvote and downvote)
             JPanel votePanel = new JPanel();
             votePanel.setLayout(new FlowLayout(FlowLayout.LEFT));
             votePanel.add(upvoteButton);
             votePanel.add(downvoteButton);
 
+            // Add the image, caption, votes, and vote buttons to the post panel
             postPanel.add(imageLabel, BorderLayout.NORTH);
             postPanel.add(captionLabel, BorderLayout.CENTER);
             postPanel.add(voteLabel, BorderLayout.SOUTH);
             postPanel.add(votePanel, BorderLayout.SOUTH);
 
+            JPanel commentLabel = new JPanel();
+
+            int i = 4;
+            while (i < info.length) {
+                JLabel comment = new JLabel(info[i]);
+                commentLabel.add(comment);
+                i++;
+            }
+
+            postPanel.add(commentLabel, BorderLayout.EAST);
+
+            // Add the post panel to the feed
             feedPanel.add(postPanel);
         }
 
@@ -500,9 +625,9 @@ public class Client implements Runnable {
 
 
     // Method to prompt for a profile picture
-    private String promptForProfilePicture() {
+    private String promptForPicture(String dialog) {
         JFileChooser fileChooser = new JFileChooser();
-        fileChooser.setDialogTitle("Select Profile Picture");
+        fileChooser.setDialogTitle(dialog);
         fileChooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter("Image files", "jpg", "jpeg", "png", "gif"));
 
         int result = fileChooser.showOpenDialog(null);
@@ -588,15 +713,10 @@ public class Client implements Runnable {
     }
 
     private void sendExitMessage() {
-        String hostName = "localhost";
-        int portNumber = 4242;
         try {
-        // try (Socket socket = new Socket(hostName, portNumber);
-        //      PrintWriter pw = new PrintWriter(socket.getOutputStream(), true);
-        //      BufferedReader br = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
 
             // Send login request
-            writer.println("Option 16");
+            writer.println("Option 16"); writer.flush();
             runLoop = false;
             System.exit(0);
         } catch (Exception e) {
@@ -610,7 +730,6 @@ public class Client implements Runnable {
 
 
 }
-
 
 
 
