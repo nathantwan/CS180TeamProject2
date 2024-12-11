@@ -1,4 +1,3 @@
-
 import javax.swing.*;
 import java.io.*;
 import java.net.*;
@@ -58,27 +57,26 @@ public class Client implements Runnable {
 
             frame.add(cardPanel);
             frame.setVisible(true);
-            // boolean runLoop = false;
-            // connectToServer();
+            socket.setKeepAlive(true);
 
         } catch (Exception e) {
             JOptionPane.showMessageDialog(null, "Connection Failed", "Search Engine",
                     JOptionPane.ERROR_MESSAGE);
         } finally {
-            try {
-                if (reader != null) {
-                    reader.close();
-                }
-                if (writer != null) {
-                    writer.close();
-                }
-                if (socket != null) {
-                    socket.close();
-                }
-            } catch (IOException ex) {
-                JOptionPane.showMessageDialog(null, "Error closing resources", "Search Engine",
-                        JOptionPane.ERROR_MESSAGE);
-            }
+            // try {
+            //     if (reader != null) {
+            //         reader.close();
+            //     }
+            //     if (writer != null) {
+            //         writer.close();
+            //     }
+            //     if (socket != null) {
+            //         socket.close();
+            //     }
+            // } catch (IOException ex) {
+            //     JOptionPane.showMessageDialog(null, "Error closing resources", "Search Engine",
+            //             JOptionPane.ERROR_MESSAGE);
+            // }
         }
     }
     public static void main(String[] args) {
@@ -115,7 +113,6 @@ public class Client implements Runnable {
 
         return panel;
     }
-
     private JPanel createLoginPage() {
         JPanel panel = new JPanel();
         JTextField usernameField = new JTextField(10);
@@ -137,8 +134,6 @@ public class Client implements Runnable {
 
         return panel;
     }
-
-    // Method to create the Sign Up Page
     private JPanel createSignUpPage() {
         JPanel panel = new JPanel(new BorderLayout());
 
@@ -218,13 +213,13 @@ public class Client implements Runnable {
 
 
     private JPanel createMainPage() {
-        String hostName = "localhost";
-        int portNumber = 4242;
         List<Post> posts = new ArrayList<>();
         List<User> users = new ArrayList<>();
-        users.add(new User("y", "g", "yg1", "1234567", null));
-        users.add(new User("y", "g", "yg2", "1234567", null));
-        users.add(new User("y", "g", "yg3", "1234567", null));
+
+
+        // users.add(new User("y", "g", "yg1", "1234567", null));
+        // users.add(new User("y", "g", "yg2", "1234567", null));
+        // users.add(new User("y", "g", "yg3", "1234567", null));
         
         // Use BorderLayout for the main panel
         JPanel panel = new JPanel(new BorderLayout());
@@ -556,29 +551,16 @@ public class Client implements Runnable {
         }
         return null;
     }
-    private void connectToServer() {
-        String hostName = "localhost";
-        int portNumber = 4242;
-        try (Socket socket = new Socket(hostName, portNumber);
-             PrintWriter pw = new PrintWriter(socket.getOutputStream(), true);
-             BufferedReader br = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
-
-        } catch (IOException e) {
-            SwingUtilities.invokeLater(() -> {
-                JOptionPane.showMessageDialog(null, "Can't Connect to Server", "Error", JOptionPane.ERROR_MESSAGE);
-            });
-        }
-
-    }
     private void sendLoginRequest(String username, String password) {
-        String hostName = "localhost";
-        int portNumber = 4242;
         try{
 
             // Send login request
             writer.println("Login");
+            writer.flush();
             writer.println(username);
+            writer.flush();
             writer.println(password);
+            writer.flush();
 
             // Wait for server response
             String response = reader.readLine();
@@ -599,18 +581,16 @@ public class Client implements Runnable {
         }
     }
     private void sendSignUpRequest(String first, String last, String username, String password, String path) {
-        System.out.println("sign up request");
-        // String hostName = "localhost";
-        // int portNumber = 4242;
-        // try (Socket socket = new Socket(hostName, portNumber);
-        //      PrintWriter pw = new PrintWriter(socket.getOutputStream(), true);
-        //      BufferedReader br = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
         try {
             // Send login request
             writer.println("Sign Up");
+            writer.flush();
             writer.println(first);
+            writer.flush();
             writer.println(last);
+            writer.flush();
             writer.println(username);
+            writer.flush();
             String userResponse = reader.readLine();
             SwingUtilities.invokeLater(() -> {
                 if ("false".equals(userResponse)) {
@@ -618,6 +598,7 @@ public class Client implements Runnable {
                 }
             });
             writer.println(password);
+            writer.flush();
             String passResponse = reader.readLine();
             SwingUtilities.invokeLater(() -> {
                 if ("false".equals(passResponse)) {
@@ -627,12 +608,13 @@ public class Client implements Runnable {
                 }
             });
             writer.println(path);
+            writer.flush();
 
 
 
 
         } catch (IOException e) {
-            System.out.println(e.getStackTrace());
+            e.printStackTrace();
             SwingUtilities.invokeLater(() -> {
                 JOptionPane.showMessageDialog(null, "Connection error", "Error", JOptionPane.ERROR_MESSAGE);
             });
