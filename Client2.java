@@ -287,13 +287,17 @@ public class Client implements Runnable {
 
             // Add action listeners to the buttons to handle votes
             upvoteButton.addActionListener(e -> {
-                writer.println("Option 13"); writer.flush(); writer.println(String.valueOf(postNums.indexOf(postNum))); writer.flush();
-                updateFeed(feedPanel);
+                try {
+                    writer.println("Option 13"); writer.flush(); writer.println(String.valueOf(postNums.indexOf(postNum))); writer.flush();
+                    reader.readLine();
+                    updateFeed(feedPanel);} catch (Exception er) {}
             });
 
             downvoteButton.addActionListener(e -> {
-                writer.println("Option 14"); writer.flush(); writer.println(String.valueOf(postNums.indexOf(postNum))); writer.flush();
-                updateFeed(feedPanel);
+                try {
+                    writer.println("Option 14"); writer.flush(); writer.println(String.valueOf(postNums.indexOf(postNum))); writer.flush();
+                    reader.readLine();
+                    updateFeed(feedPanel);} catch (Exception er) {}
             });
 
             // Create a panel for the buttons (upvote and downvote)
@@ -580,13 +584,17 @@ public class Client implements Runnable {
 
             // Add action listeners to the buttons to handle votes
             upvoteButton.addActionListener(e -> {
+                try {
                 writer.println("Option 13"); writer.flush(); writer.println(String.valueOf(postNums.indexOf(postNum))); writer.flush();
-                updateFeed(feedPanel);
+                reader.readLine();
+                updateFeed(feedPanel);} catch (Exception er) {}
             });
 
             downvoteButton.addActionListener(e -> {
-                writer.println("Option 14"); writer.flush(); writer.println(String.valueOf(postNums.indexOf(postNum))); writer.flush();
-                updateFeed(feedPanel);
+                try {
+                    writer.println("Option 14"); writer.flush(); writer.println(String.valueOf(postNums.indexOf(postNum))); writer.flush();
+                    reader.readLine();
+                    updateFeed(feedPanel);} catch (Exception er) {}
             });
 
             // Create a panel for the buttons (upvote and downvote)
