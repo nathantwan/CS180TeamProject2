@@ -29,8 +29,9 @@ public class TwitterServer implements Runnable {
         users.add(new User("y", "g", "yg2", "1234567", null));
         users.add(new User("y", "g", "yg3", "1234567", null));
 
+        try{
         posts.add(new Post("idk1", null, users.get(0), 0, 0));
-        posts.add(new Post("idk2", null, users.get(0), 0, 0));
+        posts.add(new Post("idk2", null, users.get(0), 0, 0));} catch (Exception e) {}
     }
 
     
@@ -182,19 +183,17 @@ public class TwitterServer implements Runnable {
         }
     }
     public String option6(User user) { //display feed
-        ArrayList<Post> feed;
+        List<Post> feed;
         synchronized (obj) {
             feed = user.displayFeed(posts);
+            feed.sort((p1, p2) -> Integer.compare(p2.getTotalVotes(), p1.getTotalVotes()));
         }   
-        if (feed.size() == 0) {
-            return "There are no posts in your feed.\nstop";
-        }
         String toReturn = "";
         for (Post p : feed) {
-            toReturn += p.toString() + "\n";
+            toReturn += p.getPostNumber() + ",";
         }
-        toReturn = toReturn.substring(0, toReturn.length() - 1) + "\nstop";
-        return toReturn;
+        if (toReturn.isEmpty()) {return "";}
+        return toReturn.substring(0, toReturn.length()-1);
     }
     public void option7(User user, String caption, String path) throws InvalidPostException { //create post
         String image;
@@ -209,10 +208,15 @@ public class TwitterServer implements Runnable {
         }
     }
     public String option8(int postNum, User user) { //delete post
-        if (postNum < 0 || postNum >= posts.size()) {
+        List<Post> feed;
+        synchronized (obj) {
+            feed = user.displayFeed(posts);
+            feed.sort((p1, p2) -> Integer.compare(p2.getTotalVotes(), p1.getTotalVotes()));
+        }  
+        if (postNum < 0 || postNum >= feed.size()) {
             return "Error: Post could not be found";
         } else {
-            Post p = posts.get(postNum);
+            Post p = feed.get(postNum);
             if (p.getUser().equals(user) == false) {
                 return "Error: You do not have the permissions to delete this post";
             } else {
@@ -222,10 +226,15 @@ public class TwitterServer implements Runnable {
         }
     }
     public String option9(int postNum, String caption, User user) { //edit post
-        if (postNum < 0 || postNum >= posts.size()) {
+        List<Post> feed;
+        synchronized (obj) {
+            feed = user.displayFeed(posts);
+            feed.sort((p1, p2) -> Integer.compare(p2.getTotalVotes(), p1.getTotalVotes()));
+        }  
+        if (postNum < 0 || postNum >= feed.size()) {
             return "Error: Post could not be found";
         } else {
-            Post p = posts.get(postNum);
+            Post p = feed.get(postNum);
             if (p.getUser().equals(user) == false) {
                 return "Error: You do not have the permissions to edit this post";
             } else {
@@ -240,10 +249,15 @@ public class TwitterServer implements Runnable {
         }
     }
     public String option10(int postNum, String comment, User user) { //create comment
-        if (postNum < 0 || postNum >= posts.size()) {
+        List<Post> feed;
+        synchronized (obj) {
+            feed = user.displayFeed(posts);
+            feed.sort((p1, p2) -> Integer.compare(p2.getTotalVotes(), p1.getTotalVotes()));
+        }  
+        if (postNum < 0 || postNum >= feed.size()) {
             return "Error: Post could not be found";
         } else {
-            Post p = posts.get(postNum);
+            Post p = feed.get(postNum);
             if (comment == null || comment.length() == 0) {
                 return "Error: Invalid comment";
             } else {
@@ -253,10 +267,15 @@ public class TwitterServer implements Runnable {
         }
     }
     public String option11(int postNum, int commentNum, User user) { //delete comment
-        if (postNum < 0 || postNum >= posts.size()) {
+        List<Post> feed;
+        synchronized (obj) {
+            feed = user.displayFeed(posts);
+            feed.sort((p1, p2) -> Integer.compare(p2.getTotalVotes(), p1.getTotalVotes()));
+        }  
+        if (postNum < 0 || postNum >= feed.size()) {
             return "Error: Post could not be found";
         } else {
-            Post p = posts.get(postNum);
+            Post p = feed.get(postNum);
             if (commentNum < 0 || commentNum >= p.getComments().size()) {
                 return "Error: Comment could not be found";
             } else {
@@ -271,10 +290,15 @@ public class TwitterServer implements Runnable {
         }
     }
     public String option12(int postNum, int commentNum, String newComment, User user) { //edit comment
-        if (postNum < 0 || postNum >= posts.size()) {
+        List<Post> feed;
+        synchronized (obj) {
+            feed = user.displayFeed(posts);
+            feed.sort((p1, p2) -> Integer.compare(p2.getTotalVotes(), p1.getTotalVotes()));
+        }  
+        if (postNum < 0 || postNum >= feed.size()) {
             return "Error: Post could not be found";
         } else {
-            Post p = posts.get(postNum);
+            Post p = feed.get(postNum);
             if (commentNum < 0 || commentNum >= p.getComments().size()) {
                 return "Error: Comment could not be found";
             } else {
@@ -292,20 +316,30 @@ public class TwitterServer implements Runnable {
             }
         }
     }
-    public String option13(int postNum) { //upvote post
-        if (postNum < 0 || postNum >= posts.size()) {
+    public String option13(int postNum, User user) { //upvote post
+        List<Post> feed;
+        synchronized (obj) {
+            feed = user.displayFeed(posts);
+            feed.sort((p1, p2) -> Integer.compare(p2.getTotalVotes(), p1.getTotalVotes()));
+        }  
+        if (postNum < 0 || postNum >= feed.size()) {
             return "Error: Post could not be found";
         } else {
-            Post p = posts.get(postNum);
+            Post p = feed.get(postNum);
             p.incrementUpvote();
             return "Post upvoted";
         }
     }
-    public String option14(int postNum) { //downvote post
-        if (postNum < 0 || postNum >= posts.size()) {
+    public String option14(int postNum, User user) { //downvote post
+        List<Post> feed;
+        synchronized (obj) {
+            feed = user.displayFeed(posts);
+            feed.sort((p1, p2) -> Integer.compare(p2.getTotalVotes(), p1.getTotalVotes()));
+        }  
+        if (postNum < 0 || postNum >= feed.size()) {
             return "Error: Post could not be found";
         } else {
-            Post p = posts.get(postNum);
+            Post p = feed.get(postNum);
             p.incrementDownvote();
             return "Post downvoted";
         }
@@ -328,6 +362,21 @@ public class TwitterServer implements Runnable {
         return toRet;
     }
 
+    public String postInfo(int postNum) {
+        Post post = null;
+        for (Post p : posts) {
+            if (p.getPostNumber() == postNum) {post = p; break;}
+        }
+
+        String s = "";
+        s += post.getImage() + "," + post.getCaption() + "," + post.getUpvote() + "," + post.getDownvote()
+            + ",";
+        for (Comment c : post.getComments()) {
+           s += c.getCommenter().getUsername() + ": " + c.getText() + ",";
+        }
+        return s.substring(0, s.length()-1);
+    }
+
     public void run() {
         if (true) {
             try {
@@ -338,16 +387,19 @@ public class TwitterServer implements Runnable {
                 while (option != null) {
                     if (option.equals("Login")) {
                         String username = reader.readLine();
+                        String password = reader.readLine();
                         User tempUser = getUser(username); 
                         boolean tempUserNull = (tempUser != null);
+                        if (!tempUserNull){
                         writer.write(String.valueOf(tempUserNull));
+                        System.out.println(String.valueOf(tempUserNull));
                         writer.println();
-                        writer.flush();
+                        writer.flush();}
 
                         if (tempUser != null) {
-                            String password = reader.readLine();
                             boolean pass = tempUser.getPassword().equals(password);
                             writer.write(String.valueOf(pass));
+                            System.out.println(String.valueOf(pass));
                             writer.println();
                             writer.flush();
 
@@ -420,9 +472,11 @@ public class TwitterServer implements Runnable {
                     }
                     if (option.equals("Option 6")) {
                         String output = option6(user);
+                        System.out.println(output);
                         writer.write(output);
                         writer.println();
                         writer.flush();
+                        
                     }
                     if (option.equals("Option 7")) {
                         String caption = reader.readLine();
@@ -476,14 +530,14 @@ public class TwitterServer implements Runnable {
                     }
                     if (option.equals("Option 13")) {
                         int postNum = Integer.parseInt(reader.readLine());
-                        String output = option13(postNum);
+                        String output = option13(postNum, user);
                         writer.write(output);
                         writer.println();
                         writer.flush();
                     }
                     if (option.equals("Option 14")) {
                         int postNum = Integer.parseInt(reader.readLine());
-                        String output = option14(postNum);
+                        String output = option14(postNum, user);
                         writer.write(output);
                         writer.println();
                         writer.flush();
@@ -503,6 +557,14 @@ public class TwitterServer implements Runnable {
                     }
                     if (option.equals("Get Users")) {
                         String output = sendUsers(user);
+                        writer.write(output);
+                        writer.println();
+                        writer.flush();
+                    }
+                    if (option.equals("Post Info")) {
+                        int postNum = Integer.parseInt(reader.readLine());
+                        System.out.println(postNum);
+                        String output = postInfo(postNum);
                         writer.write(output);
                         writer.println();
                         writer.flush();
