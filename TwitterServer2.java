@@ -17,50 +17,65 @@ public class TwitterServer implements Runnable {
     private ArrayList<User> users = new ArrayList<User>();
     private ArrayList<Post> posts = new ArrayList<Post>();
     private final Object obj = new Object();
-
-    public TwitterServer(String usernameFile, ArrayList<String> userFiles, ArrayList<String> postFiles, Socket socket) {
-        readFile(usernameFile, userFiles, postFiles);
-        this.socket = socket;
-    }
     
-    public TwitterServer(Socket socket) {
+    public TwitterServer(Socket socket){
+        readFile();
         this.socket = socket;
-        users.add(new User("y", "g", "yg1", "1234567", null));
-        users.add(new User("y", "g", "yg2", "1234567", null));
-        users.add(new User("y", "g", "yg3", "1234567", null));
+        
+        for (User u : users) {System.out.println(u.getUsername());}
+        // users.add(new User("y", "g", "yg1", "1234567", null));
+        // users.add(new User("y", "g", "yg2", "1234567", null));
+        // users.add(new User("y", "g", "yg3", "1234567", null));
 
-        try{
-        posts.add(new Post("idk1", null, users.get(0), 0, 0));
-        posts.add(new Post("idk2", null, users.get(0), 0, 0));} catch (Exception e) {}
+        // try{
+        // posts.add(new Post("idk1", null, users.get(0), 0, 0));
+        // posts.add(new Post("idk2", null, users.get(0), 0, 0));} catch (Exception e) {}
     }
 
     
 
     public void writeFile() {
         try {
+            PrintWriter pwD = new PrintWriter(new FileOutputStream(new File("DATABASE.txt"), false));
             PrintWriter pw = new PrintWriter(new FileOutputStream(new File("users.txt"), false));
             synchronized (obj) {
                 for (User u : users) { // Write users
                     u.writeFile(); //write specifc user info
-                    String picture = (u.getProfilePicture() == null) ? "null" : u.getProfilePicture();
+                    String picture = (u.getProfilePicture() == null || u.getProfilePicture().isEmpty()) ? "null" : u.getProfilePicture();
                     String userInfo = u.getName() + ", " + u.getUsername() + ", " + u.getPassword() + ", " + picture;
                     pw.println(userInfo);
                 }
+                
+                for (Post p : posts) { //write posts
+                    pwD.println(p.writePost());
+                }
             }
+            pw.flush();
             pw.close();
+            pwD.close();
         } catch (FileNotFoundException e) {
             System.out.println("Error: File not created");
         }
-        synchronized (obj) {
-            for (Post p : posts) { //write posts
-                p.writePost();
-            }
-        }
+        
     }
-    public void readFile(String usernameFile, ArrayList<String> userFiles, ArrayList<String> postFiles) {
+    public void readFile() {
+        System.out.println("reading");
         try {
-            BufferedReader bfr = new BufferedReader(new FileReader(new File(usernameFile)));
-            while (true) { //read users
+            
+            BufferedReader bfr = new BufferedReader(new FileReader(new File("DATABASE.txt")));
+
+            ArrayList<String> userFiles = new ArrayList<>();
+            ArrayList<String> postFiles = new ArrayList<>();
+
+            String postFile = bfr.readLine();  
+            while (postFile != null && postFile.isEmpty() == false) {
+                postFiles.add(postFile);
+                postFile = bfr.readLine();
+            }
+
+
+            bfr = new BufferedReader(new FileReader(new File("users.txt")));
+            while (true) { //read users                
                 String userInfo = bfr.readLine();
                 if (userInfo == null) {
                     break;
@@ -72,6 +87,8 @@ public class TwitterServer implements Runnable {
                 synchronized (obj) {
                     users.add(new User(firstname, lastname, uArray[1], uArray[2], image));
                 }
+                String usertxt = uArray[1] + ".txt";
+                userFiles.add(usertxt);
             }
 
             for (String file : userFiles) { //get specific user info
@@ -103,6 +120,7 @@ public class TwitterServer implements Runnable {
                 String postInfo = bfr.readLine();
                 String[] postArray = postInfo.split(", ");
                 String im = (postArray[1].equals("null")) ? null : (postArray[1]);
+                try{
                 Post p = new Post(postArray[0], im, getUser(postArray[4]),
                                   Integer.parseInt(postArray[2]), Integer.parseInt(postArray[3]));
                 synchronized (obj) {
@@ -116,11 +134,11 @@ public class TwitterServer implements Runnable {
                     String[] commentArray = commentInfo.split(", ");
                     p.addComment(commentArray[0], p.getUser(), getUser(commentArray[2]), p);
 
-                }
+                }} catch (InvalidPostException e) {}
             }
 
             bfr.close();
-        } catch (Exception e) {
+        } catch (IOException e) {
             System.out.println("Error: Files could not be read");
         }
     }
@@ -349,6 +367,7 @@ public class TwitterServer implements Runnable {
     }
     public void option16() { //end run
         writeFile();
+        try {socket.close();} catch (IOException e) {System.out.println("no close");}
     }
     public String sendUsers(User user) {
         String toRet = "";
@@ -361,7 +380,6 @@ public class TwitterServer implements Runnable {
         toRet += "stop";
         return toRet;
     }
-
     public String postInfo(int postNum) {
         Post post = null;
         for (Post p : posts) {
@@ -385,6 +403,9 @@ public class TwitterServer implements Runnable {
                 PrintWriter writer = new PrintWriter(socket.getOutputStream());
                 String option = reader.readLine();
                 while (option != null) {
+                    if (option.equals("Get Username")) {
+                        writer.println(user.getUsername()); writer.flush();
+                    }
                     if (option.equals("Login")) {
                         String username = reader.readLine();
                         String password = reader.readLine();
@@ -580,7 +601,7 @@ public class TwitterServer implements Runnable {
     
     
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args){
         try {
 
             ServerSocket serverSocket = new ServerSocket(4242);
